@@ -1,5 +1,15 @@
 # Framework for first-principles calculations of charged dopants and defects in 2D materials
 
+### MODIFICATIONS
+
+This is a modified version of the [charged-defects-framework](https://github.com/aztan2/charged-defects-framework).
+This has been edited for three reasons:
+1. Issues and errors encountered (particularly filename handling) that needed resolving.
+2. Remove assumption of slab being centred in the cell.
+3. Handle already-run files, instead of trying to generate input files such as `INCAR`.
+
+----------
+
 **qdef2d** [tentative name, work-in-progress] is a python package that aims to help automate and accelerate the setting up and post-processing of charged defect calculations in 2D materials. This will enable the rapid and robust evaluation of defect structures, formation energies, and electronic properties for different types of defects in a wide range of 2D materials to create a new database of defects in 2D and layered bulk materials. The modules and scripts are currently set up to work with VASP input/output files and the University of Florida's high performance computing cluster, HiPerGator. 
 
 
