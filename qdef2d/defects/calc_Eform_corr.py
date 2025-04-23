@@ -27,7 +27,7 @@ def calc(dir_def,xlfile):
     writer = pd.ExcelWriter(os.path.join(dir_def,xlfile))
     for q in df.keys():  
         df[q].to_excel(writer, q, index=False)
-    writer.save()   
+    writer.close()   
     
 
 if __name__ == '__main__':

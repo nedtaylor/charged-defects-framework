@@ -139,7 +139,7 @@ def parse(path_def,path_ref,xlfile,soc=False,logfile=None):
         
         df.to_excel(writer, q, index=False)
 
-    writer.save()
+    writer.close()
     
     myLogger.debug("Total time taken (s): %.2f"%(time.time()-time0))
     

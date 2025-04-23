@@ -56,7 +56,7 @@ def calc(main_system,dir_db,dir_def,xlfile,mu_limit,functional="GGA",soc=False,l
     
  
     ## find initdef.json file
-    if osutils.check_file_exists(dir_def,"initdef") == True:
+    if osutils.check_file_exists(dir_def,"initdefect.json") == True:
         for file in os.listdir(dir_def): 
             if file.startswith("initdef"):
                 file_initdef = file
@@ -70,6 +70,9 @@ def calc(main_system,dir_db,dir_def,xlfile,mu_limit,functional="GGA",soc=False,l
                 ni_list += ni
         myLogger.info("Atoms added/removed: " + \
                      ", ".join([str(n)+"*"+i for n,i in zip(ni_list,species_list)]))
+    else:
+        myLogger.info("Cannot find the initdefect file")
+        return
 
    
     for q in [qi for qi in df.keys()]:
@@ -138,7 +141,7 @@ def calc(main_system,dir_db,dir_def,xlfile,mu_limit,functional="GGA",soc=False,l
     writer = pd.ExcelWriter(os.path.join(dir_def,xlfile))
     for q in df.keys():  
         df[q].to_excel(writer, q, index=False)
-    writer.save() 
+    writer.close() 
     
     
 if __name__ == '__main__':
