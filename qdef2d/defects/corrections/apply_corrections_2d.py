@@ -4,6 +4,8 @@ import errno
 import argparse
 from qdef2d import osutils, logging
 from qdef2d.defects.corrections import SPHInX_input_file, alignment_correction_2d
+from ase.io import read
+import numpy as np
 
 
 def apply_all(dir_def,dir_ref,eps_slab=None,d_slab=None,dbentry=None,
@@ -55,6 +57,8 @@ def apply_all(dir_def,dir_ref,eps_slab=None,d_slab=None,dbentry=None,
 
     qs = osutils.listdironly(dir_def)
     for q in [qi for qi in qs if qi != 'charge_0']:      
+        print("Charge state: %s" % q)
+
         for cell in osutils.listdironly(os.path.join(dir_def,q,'')):
             for vac in osutils.listdironly(os.path.join(dir_def,q,cell,'')):
                 folder = os.path.join(dir_def,q,cell,vac,'')
@@ -65,6 +69,54 @@ def apply_all(dir_def,dir_ref,eps_slab=None,d_slab=None,dbentry=None,
                     folder_ref = os.path.join(folder_ref,'dos','')
                 if os.path.exists(folder) and 'restart' in osutils.listdironly(folder):
                     folder = os.path.join(folder,'restart','')
+
+                # read Atoms object from POSCAR
+                if not os.path.exists(os.path.join(folder,'POSCAR')):
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), 
+                                            os.path.join(folder,'POSCAR'))
+                atoms = read(os.path.join(folder,'POSCAR'))
+
+                # Get atomic positions
+                positions = atoms.positions.copy()
+
+                # Get periodic cell vector along z
+                cell_z = atoms.cell[2, 2]  # Third component of the third cell vector
+
+                # Add periodic images above and below
+                positions = np.vstack((positions, positions + [0, 0, cell_z])) #, positions - [0, 0, cell_z]))
+
+                # Sort all positions by z
+                positions = positions[np.argsort(positions[:, 2])]
+
+                # Remove duplicate positions (tolerance-based filtering)
+                filtered_positions = [positions[0]]
+                for pos in positions[1:]:
+                    if np.linalg.norm(pos - filtered_positions[-1]) > 1e-3:  # Remove near-duplicates
+                        filtered_positions.append(pos)
+                positions = np.array(filtered_positions)
+
+                # Compute distances between consecutive atoms along z
+                distances = np.diff(positions[:, 2])
+
+                # Debugging output
+                print("Min distance between atoms: ", np.min(distances))
+                print("Max distance between atoms: ", np.max(distances))
+
+                # Find the first large gap (> 60 angstrom)
+                lw_idx = np.argmax(distances > 6.0)  # First occurrence of gap > 60 angstrom
+
+                if lw_idx == 0 and distances[lw_idx] <= 6.0:
+                    raise ValueError("No vacuum gap larger than 6 angstroms was found!")
+
+                # Print results
+                print("Slab is located at %.2f bohr" % positions[lw_idx, 2])
+                print(positions[lw_idx : lw_idx + 2])
+
+                slab_edge_up = positions[lw_idx, 2]
+                slab_edge_lw = positions[lw_idx + 1, 2]
+
+
+
                 
                 ## check if defectproperty.json file is present in current directory
                 if not os.path.exists(os.path.join(folder,'defectproperty.json')):
@@ -74,7 +126,7 @@ def apply_all(dir_def,dir_ref,eps_slab=None,d_slab=None,dbentry=None,
                 else:
                     os.chdir(folder)
                     ## generate SPHInX input file
-                    SPHInX_input_file.generate(eps_slab,d_slab)
+                    SPHInX_input_file.generate(eps_slab,d_slab, slab_edge_lw, slab_edge_up)
                     
                     if (os.path.exists(os.path.join(folder,'LOCPOT')) and 
                         os.path.exists(os.path.join(folder_ref,'LOCPOT'))):
@@ -86,7 +138,8 @@ def apply_all(dir_def,dir_ref,eps_slab=None,d_slab=None,dbentry=None,
                         alignment_correction_2d.calc(os.path.join(folder_ref,'LOCPOT'),
                                                      os.path.join(folder,'LOCPOT'),
                                                      encut, int(q.split('_')[-1]),
-                                                     allplots=True, logfile='getalign.log')
+                                                     allplots=True, logfile='getalign.log',
+                                                     slab_edge_lw=slab_edge_lw, slab_edge_up=slab_edge_up)
     
                     elif not os.path.exists(os.path.join(folder,'LOCPOT')):
                         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), 

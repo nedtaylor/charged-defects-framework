@@ -47,18 +47,18 @@ def charge_grp(posZ,q):
 
 def isolated_grp(slabmin,slabmax):
     
-    if slabmin <= 3.0:
-        raise ValueError ("insufficient vacuum to define isolated group")
+    # if slabmin <= 3.0:
+    #     raise ValueError ("insufficient vacuum to define isolated group")
 
     s = 'isolated { \n'
-    s += '    fromZ = {}; \n'.format(Ang_to_bohr(slabmin-3))
+    s += '    fromZ = {}; \n'.format(Ang_to_bohr(slabmin+5))
     s += '    toZ = {}; \n'.format(Ang_to_bohr(slabmax+3))
     s += '} \n\n'  
 
     return s
 
     
-def generate(eps,slab_d):
+def generate(eps,slab_d, slab_edge_lw, slab_edge_up):
     
     """
     Generate SPHInX input file.
@@ -79,17 +79,20 @@ def generate(eps,slab_d):
     s = structure_grp(lattice)
     
     ## SLAB GROUP
-    ## assume slab is centered in the cell vertically
-    slabmin = (lattice.c-slab_d)/2
-    slabmax = (lattice.c+slab_d)/2
+    slabmin = slab_edge_lw - 1.0
+    slabmax = slab_edge_up + 1.0
     s += slab_grp(slabmin,slabmax,eps=eps*np.eye(3))
     
     ## CHARGE GROUP
+    print("DEFECT SITE:", defprop["defect_site"])
     posZ = np.mean([def_site[2] for def_site in defprop["defect_site"]])
     s += charge_grp(posZ*lattice.c,defprop["charge"])
     
     ## ISOLATED GROUP
-    s += isolated_grp(slabmin,slabmax)
+    if slabmin > slabmax:
+        s += isolated_grp(slabmin-lattice.c,slabmax)
+    else:
+        s += isolated_grp(slabmin,slabmax)
 
     if not os.path.exists(os.path.join(dir_sub,"correction")):
             os.makedirs(os.path.join(dir_sub,"correction"))
