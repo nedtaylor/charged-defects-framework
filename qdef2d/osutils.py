@@ -21,6 +21,8 @@ def check_file_exists(directory,filename):
     
     files = [f for f in os.listdir(directory) 
                 if f.startswith(filename)]
+    # remove all files ending with tilde
+    files = [f for f in files if not f.endswith('~')]
     if len(files) < 1:
         return False
     elif len(files) > 1:
