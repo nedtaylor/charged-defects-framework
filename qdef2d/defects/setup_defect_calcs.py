@@ -89,19 +89,19 @@ def setup(dir_def_main,qs,cells,vacs,functional='PBE',kppa=400,bulkref=False):
                     gen_defect_supercell.generate(dir_def_main,file_initdef,
                                                   q,cell,vac)
                 
-                ## generate INCAR
-                incar.generate(q=q,functional=functional)
+                # ## generate INCAR
+                # incar.generate(q=q,functional=functional)
                 
-                ## generate KPOINTS
-                kpoints.generate_uniform(kppa=kppa)
+                # ## generate KPOINTS
+                # kpoints.generate_uniform(kppa=kppa)
                 
-                ## generate submission script 
-                ## with the default settings nodes=1, cpus=32, mem=2048, time=24:00:00
-                ## PLEASE CHANGE EMAIL SETTINGS!!!
-                if bulkref:
-                    submit.generate(jobname='ref_%s_%d'%(cell_str,vac),email='annemarietan@ufl.edu')
-                else:
-                    submit.generate(email='annemarietan@ufl.edu')
+                # ## generate submission script 
+                # ## with the default settings nodes=1, cpus=32, mem=2048, time=24:00:00
+                # ## PLEASE CHANGE EMAIL SETTINGS!!!
+                # if bulkref:
+                #     submit.generate(jobname='ref_%s_%d'%(cell_str,vac),email='annemarietan@ufl.edu')
+                # else:
+                #     submit.generate(email='annemarietan@ufl.edu')
       
           
     os.chdir(dir_def_main)
